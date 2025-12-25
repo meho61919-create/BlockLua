@@ -11,94 +11,143 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
 
     <style>
-        /* Tatlı ve Kaliteli Gradyan Arka Plan */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+
+        * { font-family: 'Inter', sans-serif; }
+
         body {
-            background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+            background: #0f172a;
+            color: #f8f9fa;
+            margin: 0;
+            height: 100vh;
             overflow: hidden;
         }
 
-        /* Blok Alanı Animasyonu */
-        #blocklyDiv {
-            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        /* Cam Efekti (Glassmorphism) */
+        /* Cam Efekti */
         .glass {
-            background: rgba(31, 41, 55, 0.7);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         }
 
-        /* Özel Scrollbar */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
-
-        /* Giriş Animasyonu İçin Overlay */
+        /* Yükleme Ekranı Tasarımı */
         #loader {
-            position: fixed; inset: 0; background: #0f172a;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            z-index: 9999; transition: opacity 1s ease;
+            position: fixed;
+            inset: 0;
+            background: #0f172a;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .pulse-logo {
-            animation: pulse 2s infinite;
+        .loader-bar-bg {
+            width: 240px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            margin-top: 25px;
+            overflow: hidden;
+            position: relative;
         }
 
-        @keyframes pulse {
-            0% { transform: scale(1); opacity: 0.8; }
-            50% { transform: scale(1.1); opacity: 1; }
-            100% { transform: scale(1); opacity: 0.8; }
+        #progress {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #60a5fa);
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+            transition: width 1.5s cubic-bezier(0.65, 0, 0.35, 1);
+        }
+
+        .pulse-box {
+            font-size: 60px;
+            filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.3));
+            animation: pulse-slow 3s infinite ease-in-out;
+        }
+
+        @keyframes pulse-slow {
+            0%, 100% { transform: scale(1); opacity: 0.9; }
+            50% { transform: scale(1.05); opacity: 1; }
+        }
+
+        /* Blockly Özelleştirme */
+        .blocklyTreeLabel { color: #94a3b8 !important; font-size: 13px !important; font-weight: 500; }
+        .blocklyToolboxContents { background-color: #1e293b !important; padding: 10px !important; }
+        .blocklyMainBackground { stroke: none !important; fill: #0f172a !important; }
+        
+        #luaCode {
+            scrollbar-width: thin;
+            scrollbar-color: #334155 transparent;
+        }
+
+        #luaCode::-webkit-scrollbar { width: 5px; }
+        #luaCode::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+
+        /* Başarı Bildirimi Animasyonu */
+        #toast {
+            position: fixed; top: 20px; right: 20px;
+            background: #10b981; color: white; padding: 12px 24px;
+            border-radius: 12px; font-weight: 600; display: none;
+            z-index: 10001; box-shadow: 0 10px 25px rgba(16, 185, 129, 0.2);
         }
     </style>
 </head>
-<body class="text-gray-100 h-screen flex flex-col">
+<body>
 
     <div id="loader">
-        <div class="text-6xl mb-4 pulse-logo">📦</div>
-        <h1 class="text-3xl font-light tracking-widest animate__animated animate__fadeInUp">BLOCK<span class="font-bold text-blue-400">LUA</span></h1>
-        <div class="mt-4 w-48 h-1 bg-gray-800 rounded-full overflow-hidden">
-            <div id="progress" class="h-full bg-blue-500 w-0 transition-all duration-1000"></div>
+        <div class="pulse-box">📦</div>
+        <h1 class="mt-6 text-2xl font-light tracking-[0.3em] text-white animate__animated animate__fadeIn">BLOCK<span class="font-bold text-blue-500">LUA</span></h1>
+        <p class="text-xs text-gray-500 mt-2 tracking-widest uppercase">Kod yazma, sanat yap</p>
+        <div class="loader-bar-bg">
+            <div id="progress"></div>
         </div>
     </div>
 
-    <header class="h-16 glass flex items-center justify-between px-8 z-50 animate__animated animate__slideInDown">
+    <div id="toast" class="animate__animated">Kod Kopyalandı! ✨</div>
+
+    <header class="h-16 glass flex items-center justify-between px-8 relative z-50">
         <div class="flex items-center gap-4">
-            <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-900/20">📦</div>
+            <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-700 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20 text-xl">📦</div>
             <div>
-                <h1 class="font-bold text-lg leading-tight">BlockLua</h1>
-                <p class="text-[10px] text-blue-400 tracking-[0.2em] uppercase">Art of Scripting</p>
+                <h1 class="font-bold text-lg leading-none tracking-tight">BlockLua</h1>
+                <p class="text-[10px] text-blue-400 font-bold tracking-[0.2em] uppercase mt-1">Sürüm 2.5</p>
             </div>
         </div>
-        <div class="flex gap-4">
-            <button onclick="copyCode()" class="group relative px-6 py-2 bg-blue-600 rounded-full text-sm font-medium overflow-hidden transition-all hover:scale-105 active:scale-95">
-                <span class="relative z-10">Kodu Kopyala</span>
-                <div class="absolute inset-0 bg-gradient-to-r from-blue-400 to-blue-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+        
+        <div class="flex items-center gap-4">
+            <button onclick="copyCode()" class="group relative px-6 py-2 bg-blue-600 hover:bg-blue-500 rounded-full text-sm font-semibold transition-all hover:scale-105 active:scale-95 shadow-lg shadow-blue-600/20">
+                Kodu Kopyala
+            </button>
+            <button onclick="location.reload()" class="p-2 hover:bg-gray-800 rounded-lg transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
             </button>
         </div>
     </header>
 
-    <main class="flex-1 flex overflow-hidden">
+    <main class="flex-1 flex overflow-hidden relative">
         
-        <div id="blocklyDiv" class="flex-1 animate__animated animate__fadeIn animate__delay-1s"></div>
+        <div id="blocklyDiv" class="flex-1"></div>
 
-        <aside class="w-96 glass border-l border-white/5 flex flex-col animate__animated animate__slideInRight">
-            <div class="p-4 flex items-center justify-between border-b border-white/5">
-                <span class="text-xs font-bold text-gray-500 uppercase">Canlı Çıktı</span>
-                <div class="flex gap-1">
-                    <div class="w-2 h-2 rounded-full bg-red-500"></div>
-                    <div class="w-2 h-2 rounded-full bg-yellow-500"></div>
-                    <div class="w-2 h-2 rounded-full bg-green-500"></div>
+        <aside class="w-[400px] glass border-l border-white/5 flex flex-col shadow-2xl">
+            <div class="p-4 flex items-center justify-between border-b border-white/5 bg-white/5">
+                <div class="flex items-center gap-2">
+                    <div class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
+                    <span class="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Canlı Lua Çıktısı</span>
                 </div>
             </div>
-            <div class="flex-1 p-6 font-mono text-sm leading-relaxed text-blue-300/90 overflow-auto" id="luaCode">
-                -- Sanatını icra etmeye başla...
-            </div>
+            <pre id="luaCode" class="flex-1 p-6 font-mono text-sm leading-relaxed text-blue-300/80 overflow-auto bg-[#0a0f1a]">
+-- Blokları buraya sürükle...</pre>
         </aside>
     </main>
 
     <xml id="toolbox" style="display: none">
-        <category name="🌟 Başlangıç" colour="#6366f1">
+        <category name="🚀 Başlatıcılar" colour="#6366f1">
             <block type="on_start"></block>
+            <block type="on_button_click"></block>
         </category>
         <category name="⚙️ Fonksiyonlar" colour="#ec4899">
             <block type="http_get"></block>
@@ -110,28 +159,60 @@
     </xml>
 
     <script>
-        // 1. BLOK TANIMLARI
+        // 1. ÖZEL BLOK TANIMLAMALARI
         Blockly.Blocks['on_start'] = {
             init: function() {
-                this.appendDummyInput().appendField("🚀 Sistem Başlatıldığında");
+                this.appendDummyInput().appendField("🚀 Script Başlatıldığında");
                 this.appendStatementInput("DO").setCheck(null);
-                this.setColour(250);
+                this.setColour(230);
+                this.setTooltip("Script ilk çalıştığında yapılacaklar.");
+            }
+        };
+
+        Blockly.Blocks['on_button_click'] = {
+            init: function() {
+                this.appendDummyInput().appendField("🔘 Butona Tıklanınca");
+                this.appendStatementInput("DO").setCheck(null);
+                this.setColour(230);
             }
         };
 
         Blockly.Blocks['http_get'] = {
             init: function() {
-                this.appendDummyInput().appendField("🌐 Link Çalıştır").appendField(new Blockly.FieldTextInput("https://..."), "URL");
+                this.appendDummyInput().appendField("🌐 Link Çalıştır").appendField(new Blockly.FieldTextInput("https://link-buraya.com"), "URL");
                 this.setPreviousStatement(true, null);
                 this.setNextStatement(true, null);
-                this.setColour(330);
+                this.setColour(300);
             }
         };
 
-        // 2. LUA MOTORU
+        Blockly.Blocks['print_text'] = {
+            init: function() {
+                this.appendDummyInput().appendField("💬 Yazdır").appendField(new Blockly.FieldTextInput("Mesajınız"), "TEXT");
+                this.setPreviousStatement(true, null);
+                this.setNextStatement(true, null);
+                this.setColour(160);
+            }
+        };
+
+        Blockly.Blocks['set_speed'] = {
+            init: function() {
+                this.appendDummyInput().appendField("🏃 Hızı Ayarla").appendField(new Blockly.FieldNumber(16, 0, 500), "SPEED");
+                this.setPreviousStatement(true, null);
+                this.setNextStatement(true, null);
+                this.setColour(120);
+            }
+        };
+
+        // 2. LUA ÜRETİCİSİ (LUA GENERATOR)
         javascript.luaGenerator.forBlock['on_start'] = function(block) {
             var branch = javascript.luaGenerator.statementToCode(block, 'DO');
-            return '-- [ BlockLua: Generated ]\n' + branch;
+            return '-- [ BlockLua: Generated ]\nprint("BlockLua Aktif!")\n' + branch;
+        };
+
+        javascript.luaGenerator.forBlock['on_button_click'] = function(block) {
+            var branch = javascript.luaGenerator.statementToCode(block, 'DO');
+            return 'Button.MouseButton1Click:Connect(function()\n' + branch + 'end)\n';
         };
 
         javascript.luaGenerator.forBlock['http_get'] = function(block) {
@@ -139,35 +220,66 @@
             return 'loadstring(game:HttpGet("' + url + '"))()\n';
         };
 
-        // 3. BAŞLATMA VE ANİMASYON KONTROLÜ
+        javascript.luaGenerator.forBlock['print_text'] = function(block) {
+            var text = block.getFieldValue('TEXT');
+            return 'print("' + text + '")\n';
+        };
+
+        javascript.luaGenerator.forBlock['set_speed'] = function(block) {
+            var speed = block.getFieldValue('SPEED');
+            return 'game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = ' + speed + '\n';
+        };
+
+        // 3. BAŞLATMA VE AKIŞ KONTROLÜ
         window.addEventListener('load', () => {
             const progress = document.getElementById('progress');
-            progress.style.width = '100%';
-            
-            setTimeout(() => {
-                document.getElementById('loader').style.opacity = '0';
-                setTimeout(() => {
-                    document.getElementById('loader').style.display = 'none';
-                }, 1000);
-            }, 1500);
+            const loader = document.getElementById('loader');
 
+            // Çubuğu doldur (Gerçekçi hız)
+            setTimeout(() => {
+                progress.style.width = '100%';
+            }, 100);
+
+            // Çubuk dolunca ekranı kaldır
+            setTimeout(() => {
+                loader.style.opacity = '0';
+                loader.style.transform = 'scale(1.1)';
+                setTimeout(() => {
+                    loader.style.display = 'none';
+                }, 800);
+            }, 1600);
+
+            // Blockly'i Enjekte Et
             const workspace = Blockly.inject('blocklyDiv', {
                 toolbox: document.getElementById('toolbox'),
                 theme: Blockly.Themes.Dark,
                 renderer: 'zelos',
-                zoom: { controls: true, wheel: true }
+                zoom: { controls: true, wheel: true, startScale: 0.85, maxScale: 3, minScale: 0.3 }
             });
 
+            // Kod değişimini izle
             workspace.addChangeListener(() => {
                 const code = javascript.luaGenerator.workspaceToCode(workspace);
-                document.getElementById('luaCode').innerText = code || "-- Blokları buraya yerleştir...";
+                document.getElementById('luaCode').innerText = code || "-- Sanatına başla, blokları buraya sürükle...";
             });
         });
 
+        // 4. FONKSİYONLAR
         function copyCode() {
             const code = document.getElementById('luaCode').innerText;
+            const toast = document.getElementById('toast');
+            
             navigator.clipboard.writeText(code).then(() => {
-                alert("Kod Kopyalandı! Şimdi sanatını oyuna aktar.");
+                toast.style.display = 'block';
+                toast.classList.add('animate__fadeInDown');
+                
+                setTimeout(() => {
+                    toast.classList.replace('animate__fadeInDown', 'animate__fadeOutUp');
+                    setTimeout(() => {
+                        toast.style.display = 'none';
+                        toast.classList.remove('animate__fadeOutUp');
+                    }, 500);
+                }, 2000);
             });
         }
     </script>
