@@ -8,79 +8,130 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/blockly/blockly.min.js"></script>
     <script src="https://unpkg.com/blockly/lua_compressed.js"></script>
-    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+
     <style>
-        .blocklyTreeLabel { color: #d1d5db !important; font-size: 14px; }
-        .blocklyToolboxContents { background-color: #1f2937; padding: 8px; }
-        .blocklyMainBackground { stroke: #374151 !important; stroke-width: 1; }
+        /* Tatlı ve Kaliteli Gradyan Arka Plan */
+        body {
+            background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+            overflow: hidden;
+        }
+
+        /* Blok Alanı Animasyonu */
+        #blocklyDiv {
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Cam Efekti (Glassmorphism) */
+        .glass {
+            background: rgba(31, 41, 55, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Özel Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+
+        /* Giriş Animasyonu İçin Overlay */
+        #loader {
+            position: fixed; inset: 0; background: #0f172a;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 9999; transition: opacity 1s ease;
+        }
+
+        .pulse-logo {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 0.8; }
+        }
     </style>
 </head>
-<body class="bg-[#111827] text-gray-100 h-screen flex flex-col overflow-hidden">
+<body class="text-gray-100 h-screen flex flex-col">
 
-    <header class="h-14 border-b border-gray-800 flex items-center justify-between px-6 bg-[#1f2937]">
-        <div class="flex items-center gap-3">
-            <span class="text-2xl">📦</span>
-            <h1 class="font-bold text-xl tracking-tight">Block<span class="text-blue-400">Lua</span></h1>
-            <span class="text-xs bg-gray-700 px-2 py-1 rounded text-gray-400 ml-2 uppercase tracking-widest">Beta v1.0</span>
+    <div id="loader">
+        <div class="text-6xl mb-4 pulse-logo">📦</div>
+        <h1 class="text-3xl font-light tracking-widest animate__animated animate__fadeInUp">BLOCK<span class="font-bold text-blue-400">LUA</span></h1>
+        <div class="mt-4 w-48 h-1 bg-gray-800 rounded-full overflow-hidden">
+            <div id="progress" class="h-full bg-blue-500 w-0 transition-all duration-1000"></div>
+        </div>
+    </div>
+
+    <header class="h-16 glass flex items-center justify-between px-8 z-50 animate__animated animate__slideInDown">
+        <div class="flex items-center gap-4">
+            <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-900/20">📦</div>
+            <div>
+                <h1 class="font-bold text-lg leading-tight">BlockLua</h1>
+                <p class="text-[10px] text-blue-400 tracking-[0.2em] uppercase">Art of Scripting</p>
+            </div>
         </div>
         <div class="flex gap-4">
-            <button class="text-sm bg-blue-600 hover:bg-blue-500 px-4 py-1.5 rounded-lg transition" onclick="copyCode()">Kodu Kopyala</button>
-            <button class="text-sm border border-gray-600 hover:bg-gray-700 px-4 py-1.5 rounded-lg transition">Temizle</button>
+            <button onclick="copyCode()" class="group relative px-6 py-2 bg-blue-600 rounded-full text-sm font-medium overflow-hidden transition-all hover:scale-105 active:scale-95">
+                <span class="relative z-10">Kodu Kopyala</span>
+                <div class="absolute inset-0 bg-gradient-to-r from-blue-400 to-blue-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            </button>
         </div>
     </header>
 
     <main class="flex-1 flex overflow-hidden">
         
-        <div id="blocklyDiv" class="flex-1 h-full"></div>
+        <div id="blocklyDiv" class="flex-1 animate__animated animate__fadeIn animate__delay-1s"></div>
 
-        <aside class="w-80 border-l border-gray-800 bg-[#0b0f1a] flex flex-col">
-            <div class="p-3 border-b border-gray-800 bg-[#1f2937] text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                Canlı Lua Çıktısı
+        <aside class="w-96 glass border-l border-white/5 flex flex-col animate__animated animate__slideInRight">
+            <div class="p-4 flex items-center justify-between border-b border-white/5">
+                <span class="text-xs font-bold text-gray-500 uppercase">Canlı Çıktı</span>
+                <div class="flex gap-1">
+                    <div class="w-2 h-2 rounded-full bg-red-500"></div>
+                    <div class="w-2 h-2 rounded-full bg-yellow-500"></div>
+                    <div class="w-2 h-2 rounded-full bg-green-500"></div>
+                </div>
             </div>
-            <pre id="luaCode" class="p-4 text-blue-300 font-mono text-sm overflow-auto flex-1 leading-relaxed">
--- Blokları buraya sürükleyin...</pre>
+            <div class="flex-1 p-6 font-mono text-sm leading-relaxed text-blue-300/90 overflow-auto" id="luaCode">
+                -- Sanatını icra etmeye başla...
+            </div>
         </aside>
-
     </main>
 
     <xml id="toolbox" style="display: none">
-        <category name="🛠️ Başlatıcılar" colour="#5b67a5">
+        <category name="🌟 Başlangıç" colour="#6366f1">
             <block type="on_start"></block>
-            <block type="on_button_click"></block>
         </category>
-        <category name="🔥 Aksiyonlar" colour="#995ba5">
+        <category name="⚙️ Fonksiyonlar" colour="#ec4899">
             <block type="http_get"></block>
             <block type="print_text"></block>
         </category>
-        <category name="⚡ Özellikler" colour="#5ba5a5">
+        <category name="🎮 Karakter" colour="#10b981">
             <block type="set_speed"></block>
         </category>
     </xml>
 
     <script>
-        // 1. BLOK MANTIĞI (ÖZEL)
+        // 1. BLOK TANIMLARI
         Blockly.Blocks['on_start'] = {
             init: function() {
-                this.appendDummyInput().appendField("🚀 Script Başlatıldığında");
+                this.appendDummyInput().appendField("🚀 Sistem Başlatıldığında");
                 this.appendStatementInput("DO").setCheck(null);
-                this.setColour(230);
+                this.setColour(250);
             }
         };
 
         Blockly.Blocks['http_get'] = {
             init: function() {
-                this.appendDummyInput().appendField("🔗 Dışarıdan Link Çalıştır")
-                    .appendField(new Blockly.FieldTextInput("https://link.com"), "URL");
+                this.appendDummyInput().appendField("🌐 Link Çalıştır").appendField(new Blockly.FieldTextInput("https://..."), "URL");
                 this.setPreviousStatement(true, null);
                 this.setNextStatement(true, null);
-                this.setColour(290);
+                this.setColour(330);
             }
         };
 
-        // 2. LUA ÜRETİCİSİ
+        // 2. LUA MOTORU
         javascript.luaGenerator.forBlock['on_start'] = function(block) {
             var branch = javascript.luaGenerator.statementToCode(block, 'DO');
-            return '-- BlockLua Generated Script\nprint("Script Aktif!")\n' + branch;
+            return '-- [ BlockLua: Generated ]\n' + branch;
         };
 
         javascript.luaGenerator.forBlock['http_get'] = function(block) {
@@ -88,22 +139,36 @@
             return 'loadstring(game:HttpGet("' + url + '"))()\n';
         };
 
-        // 3. BAŞLAT
-        const workspace = Blockly.inject('blocklyDiv', {
-            toolbox: document.getElementById('toolbox'),
-            theme: Blockly.Themes.Dark,
-            renderer: 'zelos' // Profesyonel kavisli blok görünümü
-        });
+        // 3. BAŞLATMA VE ANİMASYON KONTROLÜ
+        window.addEventListener('load', () => {
+            const progress = document.getElementById('progress');
+            progress.style.width = '100%';
+            
+            setTimeout(() => {
+                document.getElementById('loader').style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('loader').style.display = 'none';
+                }, 1000);
+            }, 1500);
 
-        workspace.addChangeListener(() => {
-            const code = javascript.luaGenerator.workspaceToCode(workspace);
-            document.getElementById('luaCode').innerText = code || "-- Hazır mısın? Sanatına başla.";
+            const workspace = Blockly.inject('blocklyDiv', {
+                toolbox: document.getElementById('toolbox'),
+                theme: Blockly.Themes.Dark,
+                renderer: 'zelos',
+                zoom: { controls: true, wheel: true }
+            });
+
+            workspace.addChangeListener(() => {
+                const code = javascript.luaGenerator.workspaceToCode(workspace);
+                document.getElementById('luaCode').innerText = code || "-- Blokları buraya yerleştir...";
+            });
         });
 
         function copyCode() {
             const code = document.getElementById('luaCode').innerText;
-            navigator.clipboard.writeText(code);
-            alert("Kod başarıyla kopyalandı!");
+            navigator.clipboard.writeText(code).then(() => {
+                alert("Kod Kopyalandı! Şimdi sanatını oyuna aktar.");
+            });
         }
     </script>
 </body>
