@@ -1,29 +1,87 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html>
 <head>
     <meta charset="UTF-8">
     <title>BlockLua - Kod Yazma, Sanat Yap</title>
+    <script src="https://unpkg.com/blockly/blockly.min.js"></script>
+    <script src="https://unpkg.com/blockly/lua_compressed.js"></script>
+
     <style>
-        body {
-            background-color: #1e232d; /* Seçtiğimiz Slate rengi */
-            color: #f8f9fa; /* Göz yormayan beyaz */
-            font-family: 'Segoe UI', sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
+        body { background-color: #1e232d; font-family: sans-serif; margin: 0; overflow: hidden; }
+        #header { height: 50px; color: white; display: flex; align-items: center; padding-left: 20px; background: #252a34; }
+        #blocklyDiv { height: calc(100vh - 50px); width: 100%; }
+        /* Kodun görüneceği küçük panel */
+        #codeOutput { 
+            position: absolute; right: 20px; bottom: 20px; 
+            width: 300px; height: 150px; background: rgba(0,0,0,0.7); 
+            color: #82eefd; padding: 10px; border-radius: 8px;
+            font-family: monospace; font-size: 12px; overflow: auto;
+            pointer-events: none;
         }
-        h1 { color: #82eefd; font-weight: 300; } /* Tatlı bir mavi tonu */
-        p { font-style: italic; opacity: 0.8; }
-        .logo { font-size: 48px; margin-bottom: 20px; }
     </style>
 </head>
 <body>
-    <div class="logo">📦</div>
-    <h1>BlockLua</h1>
-    <p>Kod yazma, sanat yap.</p>
-    <small>Çok yakında bloklarla script yapmaya başlıyoruz...</small>
+
+<div id="header">
+    <strong>BlockLua</strong> &nbsp; | &nbsp; <i>Kod yazma, sanat yap.</i>
+</div>
+
+<div id="blocklyDiv"></div>
+
+<div id="codeOutput">-- Lua Kodun Burada Oluşacak...</div>
+
+<xml id="toolbox" style="display: none">
+    <category name="Olaylar" colour="#5ba55b">
+        <block type="on_button_click"></block>
+    </category>
+    <category name="Aksiyonlar" colour="#5b67a5">
+        <block type="print_text"></block>
+        <block type="http_get"></block>
+    </category>
+</xml>
+
+<script>
+    // 1. Yeni Bloklarımızı Tanımlıyoruz
+    Blockly.Blocks['on_button_click'] = {
+      init: function() {
+        this.appendDummyInput().appendField("Butona tıklandığında");
+        this.appendStatementInput("DO").setCheck(null);
+        this.setColour(120);
+      }
+    };
+
+    Blockly.Blocks['print_text'] = {
+      init: function() {
+        this.appendDummyInput().appendField("Ekrana yazdır:").appendField(new Blockly.FieldTextInput("Merhaba!"), "TEXT");
+        this.setPreviousStatement(true, null);
+        this.setNextStatement(true, null);
+        this.setColour(230);
+      }
+    };
+
+    // 2. Blokların Lua Karşılığını Yazıyoruz
+    javascript.luaGenerator.forBlock['on_button_click'] = function(block) {
+      var branch = javascript.luaGenerator.statementToCode(block, 'DO');
+      return 'Button.MouseButton1Click:Connect(function()\n' + branch + 'end)\n';
+    };
+
+    javascript.luaGenerator.forBlock['print_text'] = function(block) {
+      var text = block.getFieldValue('TEXT');
+      return 'print("' + text + '")\n';
+    };
+
+    // 3. Blockly'i Başlatıyoruz
+    var workspace = Blockly.inject('blocklyDiv', {
+        toolbox: document.getElementById('toolbox'),
+        scrollbars: true
+    });
+
+    // 4. Her Hareketle Kodu Güncelliyoruz
+    workspace.addChangeListener(function() {
+        var code = javascript.luaGenerator.workspaceToCode(workspace);
+        document.getElementById('codeOutput').innerText = code || "-- Blokları birleştir...";
+    });
+</script>
+
 </body>
 </html>
